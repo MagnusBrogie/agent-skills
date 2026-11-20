@@ -1,0 +1,5 @@
+.DS_Store
+# Per-user notes beside a SKILL.md; see the README
+LOCAL.md
+# Ships with Orca; not part of this repo
+orca-cli/
