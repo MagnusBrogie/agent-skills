@@ -8,7 +8,7 @@ Skills for coding agents such as Claude Code, for working on a feature branch: r
 | [`explain-branch`](explain-branch/SKILL.md) | Walks through a branch's changes step by step: data and control flow, why each abstraction exists, and which changes were needed versus chosen. Read-only. |
 | [`manual-test-plan`](manual-test-plan/SKILL.md) | Writes a plan for testing the branch in the running app, split into cases an agent can run with a browser or simulator and cases a person has to do by hand, such as screen reader checks. |
 | [`before-after`](before-after/SKILL.md) | Makes one image with a table of before and after screenshots for every visual change on the branch, taken from local builds of the base and the branch. |
-| [`voiceover`](voiceover/SKILL.md) | Drives the real macOS VoiceOver against a web page and returns a transcript of what it says. `manual-test-plan` uses it to rehearse screen reader cases when it is installed. macOS only. |
+| [`voiceover`](voiceover/SKILL.md) | Drives the real macOS VoiceOver against a web page and returns a transcript of what it says, in a macOS virtual machine so that the permissions it needs stay off your own machine. `manual-test-plan` uses it to rehearse screen reader cases when it is installed. macOS only. |
 | [`worktree-status`](worktree-status/SKILL.md) | Reports where the worktree and its pull request stand (uncommitted work, checks, reviews, open comments) and suggests the next steps. Read-only apart from a `git fetch`. |
 
 ## Example
@@ -61,7 +61,7 @@ done
 - `git` for all of them.
 - The GitHub CLI (`gh`), signed in, for anything that involves a pull request. `worktree-status` is built around it. `branch-review`, `explain-branch`, and `manual-test-plan` use it to find the base branch and read the pull request's comments, and carry on without it.
 - `before-after` needs Node.js, and Playwright (`playwright` or `@playwright/test`) installed in the project you run it in. It uses the installed Google Chrome, or Playwright's own Chromium if Chrome is missing. The images go to `~/Documents/before-after/<repository>/<branch>/`; set `BEFORE_AFTER_DIR` to use another root.
-- `voiceover` needs macOS and Node.js, and its own packages: run `npm ci` and `npx playwright install webkit` in `voiceover/tool`. VoiceOver must be allowed to be controlled with AppleScript, and the app your agent runs in needs a few macOS permissions; the skill says which, and only you can grant them. A run takes over the keyboard and the screen.
+- `voiceover` needs a macOS virtual machine on Apple silicon (the skill's examples use [Tart](https://tart.run)), with Node.js and the skill's own packages in it: `npm ci` and `npx playwright install webkit` in a copy of `voiceover/tool`. A run takes over the keyboard and the screen, and needs VoiceOver to be controllable with AppleScript plus wide macOS permissions (Accessibility, Automation, another app's data), which is why it runs in a guest. The skill has the reasons and the steps, and what it takes to run on the host instead.
 
 ## Orca
 
