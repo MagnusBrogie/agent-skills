@@ -10,6 +10,15 @@ Read this when the plan has a human case marked must pass. It says how an agent 
   5. Write out the expected announcements as a transcript. The human compares it with what the screen reader says.
 
   These five steps are what the agent does when the rehearsal is run. The plan only states the flow to walk through, the task to carry out, and that the transcript is the evidence; it does not try to write the transcript in advance.
+
+  Where the session has a screen reader the agent can drive (such as the `voiceover` skill), add a second rehearsal case after the tree walk that records what that screen reader really says on the same stretches:
+  - Follow that tool's own instructions. A real screen reader takes over the machine, so ask the user before the run unless they asked for it, and run one at a time.
+  - Read only the stretch the case is about, not the page from the top. A reliable way to start there is to give the first element `tabindex="-1"` and focus it, so that the screen reader's cursor moves to it, then step forward.
+  - Keep the screen reader's own log of spoken phrases as the evidence. A query for the current item straight after moving focus can return the previous item.
+  - Compare the result with the tree transcript. A difference between them is a finding in itself.
+  - On the human case, say which screen reader, browser engine, and platform the transcript comes from, and leave the human the rest: pronunciation, timing, other screen readers and platforms, and whether the task can be done by listening.
+
+  If the tool cannot start (a missing operating-system permission, say), report the case as blocked with the error, and say what the user has to allow. Do not work around the permission.
 - **Visual rehearsal.** The agent captures the screen in each state, size, and appearance the human case covers, and reports the facts (cut off, overlapping, misaligned by measurement, contrast ratio computed from the colors) with its own assessment, marked as an agent's opinion. The human judges from the screenshots and then in the app.
 - **Real device rehearsal.** The agent runs the same steps in the simulator. The human repeats on hardware what a simulator does not show.
 - **Wording and product judgment.** The agent reads the text in context and reports what it finds unclear or inconsistent with the rest of the app, again as an opinion.

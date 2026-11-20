@@ -19,4 +19,5 @@ Read this when the user has said yes to the offer, or has asked for the agent ca
 - Never run a case, mocked or not, against a production backend or a production deployment.
 - Edit no code in the working tree. A mock that needs a patch goes in a throwaway copy, as the plan's setup says.
 - When a rehearsal finds a problem, say that the human case waits until it is fixed.
+- A screen reader run takes over the machine: follow that tool's instructions, run it alone, and check afterwards that the screen reader is no longer running.
 - Clean up when the run is over: stop the servers you started, remove any throwaway copies and mocks, and delete any saved session files.

@@ -1,6 +1,6 @@
 ---
 name: manual-test-plan
-description: Write a testing plan for checking the current branch in the running app - cases with preconditions, steps, and the exact expected result, split into what an agent can carry out with a browser or an iOS simulator and what a human has to do by hand, such as screen reader testing, with an agent rehearsal of each human case through the accessibility tree. Use when the user asks for a manual test plan, a QA checklist, test steps, what to test by hand, what an agent can test, or how to verify a branch or PR in the app. Writes the plan, then offers to sign in on staging and run the agent part; it runs nothing until the user says yes, and it does not edit code.
+description: Write a testing plan for checking the current branch in the running app - cases with preconditions, steps, and the exact expected result, split into what an agent can carry out with a browser or an iOS simulator and what a human has to do by hand, such as screen reader testing, with an agent rehearsal of each human case through the accessibility tree and, where a screen reader can be driven, a real screen reader transcript. Use when the user asks for a manual test plan, a QA checklist, test steps, what to test by hand, what an agent can test, or how to verify a branch or PR in the app. Writes the plan, then offers to sign in on staging and run the agent part; it runs nothing until the user says yes, and it does not edit code.
 ---
 
 # Manual test plan
@@ -94,6 +94,7 @@ If `gh` is missing or not signed in, the branch has no pull request, no issue is
 - **How to run the app locally:** the project's documented command for a local build, which backend it talks to, and which ports it uses. Read the project's instructions for test environments, test accounts, and feature flags, and for which platforms the app ships on (web, iOS, Android).
 - **What the automated tests cover:** read the tests in the diff, so the plan does not spend anyone's time on what a test already pins down.
 - **Which tools an agent has here:** a browser it can drive, and a device simulator. In Orca these are the embedded browser (the `orca-cli` skill) and the iOS Simulator (the `orca-emulator` skill; `orca-emulator-android` for Android). Also look for:
+  - **A screen reader the agent can drive**, such as the `voiceover` skill, which runs the real macOS VoiceOver against a page and returns what it says.
   - **A scripted browser** (Playwright with an installed browser) for what the embedded browser cannot do. For example, the embedded browser may not put a copy on the system clipboard, so checking what is copied needs a browser whose clipboard the agent can read.
 
   Note which are available in this session; the plan says so in its setup.
@@ -179,11 +180,12 @@ Assign each case to one of three: **agent, browser**; **agent, iOS simulator**; 
 - keyboard operation in the browser: the tab order, that focus is visible and lands where it should after an action, that every control can be operated without a pointer;
 - a side-by-side comparison of the same screen on the base and on the branch;
 - what is copied when text is selected, in a browser whose clipboard the agent can read;
+- with a screen reader the agent can drive: the words that screen reader speaks, the order it stops in, and what it says after an action. This holds for that screen reader, browser engine, and platform only;
 - on the simulator: the same facts in the installed app, plus rotation, text size settings, and light and dark appearance.
 
 **A human is needed when the case turns on perception, judgment, a real device, or something an agent must not or cannot do:**
 
-- **Screen reader testing.** What VoiceOver or TalkBack speaks, in what order, with what timing, and whether a person can complete the task by listening. An agent can check that the accessibility tree is well formed; that does not show the experience is usable, and it does not replace this case. Where accessibility is a legal requirement for the project, a human screen reader case is required whenever the diff changes markup or interaction, or changes what is shown in a state so that a listener meets something new: different content in a cell, a state that now lasts longer, a control that appears or disappears.
+- **Screen reader testing.** Whether a person can complete the task by listening: pronunciation, timing and verbosity, and the screen readers and platforms no agent drove (VoiceOver on iOS, TalkBack, NVDA, Safari where the agent used another WebKit). An agent can check that the accessibility tree is well formed, and with a driven screen reader it can record what that one screen reader says. Neither shows the experience is usable, and neither replaces this case; the transcript narrows it to what the transcript cannot show. Where accessibility is a legal requirement for the project, a human screen reader case is required whenever the diff changes markup or interaction, or changes what is shown in a state so that a listener meets something new: different content in a cell, a state that now lasts longer, a control that appears or disappears.
 - **Visual judgment.** Whether something looks right: alignment, spacing, emphasis, contrast as perceived, and whether an animation or transition feels smooth.
 - **Real devices.** Touch on real hardware, haptics, the on-screen keyboard and its autofill, a real mobile browser, performance on a slow device, behavior on a real network.
 - **Signing in with a personal credential.** A login that needs a person's identity, a hardware token, or a second factor on their phone.
@@ -283,7 +285,7 @@ If the user says no, or answers something else, the plan stands as written and t
 
 - Write the plan; do not carry it out, and do not edit code. Offer to run the agent cases (see "Offer to run the agent part"), and run them only once the user has said yes to that offer or asked for it, under the rules in `reference/running.md`. Never run a case, mocked or not, against a production backend or a production deployment.
 - The files in `reference/` are part of this skill. Read each one at the point where this file names it, in full, and do not work from its one-line summary here.
-- A rehearsal never replaces the human case it rehearses, and a clean rehearsal is not a reason to drop it. A passed agent walk through the accessibility tree is not a passed screen reader test.
+- A rehearsal never replaces the human case it rehearses, and a clean rehearsal is not a reason to drop it. A passed agent walk through the accessibility tree is not a passed screen reader test, and neither is a clean transcript from a screen reader an agent drove.
 - Do not write the plan from the diff alone when the pull request, the issue, or the conversation can be read. A case that a reviewer's report, an acceptance criterion, or an earlier finding calls for, and that needs the running app, is never cut for the budget; cut something else. Where a test in code can settle it, it goes on the list of tests to write, like anything else.
 - Staging only. Every build command, URL, and backend in the plan is the staging or test one. Do not put a production command or URL in the plan, even as an alternative.
 - Do not invent accounts, URLs, credentials, or data. Describe what is needed and let the tester supply it.
