@@ -124,12 +124,7 @@ The same rule holds for any deployed environment the plan uses: the staging depl
 3. **Find the states.** For each screen, read the code for the branches it can take: loaded, loading, empty, error, missing or partial data, zero and negative values, very long values, one item and many, each setting or mode that changes the display, each account or user type. Keep the states the diff touches.
 4. **Work out how to reach each state.** Name the navigation path, and describe the data it needs by its shape ("an instrument held in two accounts, one of them with no purchase cost"), not by an account you have not confirmed exists. Where a state is hard to reach with real data, say how it can be produced (a feature flag, a rewritten response, a throttled network, a setting) or mark it as needing a specific test account.
 
-   When a case depends on a rewritten response, the plan must make the rewrite repeatable:
-   - Name the request (method and path) and the exact fields to change, with their values.
-   - Find out from the code how the app makes its requests, and say which way of intercepting works for it. A patch of one request API in the page does nothing for an app that uses another, and a rewrite must survive a reload if the case reloads.
-   - Check that the agent's browser tool can intercept requests at all. If it cannot, the case is a human case, or needs a human to set up the rewrite first.
-   - Give the human way of doing the same rewrite (for example the browser's developer tools), for the human cases that need the same state.
-   - Record under "Not covered" that the case shows how the app handles the rewritten response, not that the backend sends that shape.
+   When a case depends on a rewritten response, the plan must make the rewrite repeatable; `reference/mocks.md` says how.
 5. **Derive the expected result from the code.** Read what the code will render or do in that state and write that down exactly: the text as the app shows it, in the app's language; the value, with its formatting; what is absent. An expected result of "displays correctly" tells the tester nothing. If the code does not settle what should happen, do not guess: put it under the open questions.
 6. **Add the checks around the change:**
    - **Neighbors:** where changed shared code is used by other screens, a case for the one or two where it is most likely to behave differently (different data, a different path through the changed code). Screens that use it in the same way as one already covered do not need their own case.
@@ -142,27 +137,7 @@ The result of these steps is a list of candidate cases. The next section decides
 
 The states most likely to hide a bug are often the ones that real test data never produces: a field the backend sends as null once in a thousand accounts, a request that fails halfway, a value that changes between two fetches. Do not leave these out because they are hard to reach, and do not wait for a test account that happens to have them. Have the agent produce them with code. A plan whose cases all use the data that happens to be on the test account is testing the ordinary path, which is where bugs are least likely.
 
-For each high-risk state that real data does not give, plan a mocked scenario. Go through this list against the diff and take the ones the changed code is sensitive to:
-
-- **Data shape:** a field null or absent; one of two related fields missing; an empty list; one item; thousands of items; duplicates; an unknown enum value; a number that is zero, negative, huge, or has more decimals than expected; a very long name.
-- **Combinations across items:** the state the diff is about in one account or row and not in another; all of them in that state; none.
-- **Failure:** the request the changed code depends on returns an error, times out, or returns malformed data, while the other requests succeed.
-- **Timing:** a slow response, so that the loading state can be looked at; two responses arriving in the other order; a response arriving after the user has moved on.
-- **Change over time:** the first fetch returns one state and the next returns another (a missing value that arrives later, a position that is sold, an order that fills), to check that the screen moves from one to the other and does not stay stuck.
-- **Environment:** a feature flag in each state, another locale or currency, a date or time of day that the code branches on, a small viewport.
-
-Ways to produce them, cheapest first:
-
-1. **Rewrite a response** by intercepting the request in the agent's browser. Capture the real response first and change only the fields the case is about, so that the rest of the data stays realistic and the case fails only for the reason it is meant to.
-2. **Run a script in the page** to set a flag, a stored setting, the clock, or the network condition.
-3. **Change the app locally**, where neither of those can reach the state: a temporary patch in a throwaway copy or worktree of the repository, run locally, never in the user's working tree and never committed. Name the file and the change, and delete the copy afterwards.
-
-Write the mock as code in the plan: the interception or script, and the exact payload change, ready to run. Derive the request path and the field names from the code (the request builders and decoders), not from guesswork, and say where they came from.
-
-Keep two limits in mind:
-
-- A mocked scenario earns a case in the app only when it checks the joined app: what the screens render and do in that state. If it only checks that a decoder or a function handles the value, it is a test to write in code, with the same payload as its fixture.
-- A mock shows how the app handles a state, not that the backend produces it. Say so under "Not covered", and where it matters whether the state can really occur, put the question to whoever owns the backend under "Open questions".
+For each high-risk state that real data does not give, plan a mocked scenario. Before planning the first one, read `reference/mocks.md` in full: it lists the states to go through against the diff, the ways to produce them, and what the plan must write down so that the mock can be repeated.
 
 
 ## Rank by risk and cut
@@ -213,21 +188,7 @@ Assign each case to one of three: **agent, browser**; **agent, iOS simulator**; 
 
 **Rehearse the human cases that must pass with an agent, where an agent can attempt them.** A rehearsal is an agent case that tries to do what the human will do, with the means an agent has. It does not settle the human case, which stays in the plan and stays required. It finds what can be found without a person, and it hands the person a record of what was seen.
 
-- **Screen reader rehearsal.** The agent goes through the flow using only the accessibility tree, as someone who cannot see the screen would, in the browser and, where the app ships there, in the simulator:
-  1. Read the tree of the screen in reading order and write down, for each element a screen reader would stop on, what it would be expected to announce: name, role, state, and value.
-  2. Carry out the task of the case (find a figure, sort a table, open a sheet, complete a form) by choosing each next step from the tree alone, without looking at a screenshot.
-  3. After each action, read the tree again: where focus went, what changed, and whether the change is exposed (a live region, a state change on the control, moved focus) or happens silently.
-  4. Record what would trip a listener: a control with no name, or named by its icon or by placeholder text; several controls with the same name and nothing to tell them apart; a value read without its label or its unit; a table without header relationships; decorative content that is not hidden; content that is visible but missing from the tree; a loading or error state that nothing announces; an order in the tree that differs from the order on screen.
-  5. Write out the expected announcements as a transcript. The human compares it with what the screen reader says.
-
-  These five steps are what the agent does when the rehearsal is run. The plan only states the flow to walk through, the task to carry out, and that the transcript is the evidence; it does not try to write the transcript in advance.
-- **Visual rehearsal.** The agent captures the screen in each state, size, and appearance the human case covers, and reports the facts (cut off, overlapping, misaligned by measurement, contrast ratio computed from the colors) with its own assessment, marked as an agent's opinion. The human judges from the screenshots and then in the app.
-- **Real device rehearsal.** The agent runs the same steps in the simulator. The human repeats on hardware what a simulator does not show.
-- **Wording and product judgment.** The agent reads the text in context and reports what it finds unclear or inconsistent with the rest of the app, again as an opinion.
-- **Real consequences.** Where the action is safe for an agent (see above), there is no human case to rehearse: the agent carries it out. Otherwise the agent does not perform the action. It can still rehearse the state the action leads to: rewrite the response to what the backend is expected to send afterwards, and check what the app shows. Say on the human case that the rehearsal covered the end state only, and not the action, the transition, or what the backend really sends.
-- **No rehearsal** for signing in with a personal credential. Say so on the human case.
-
-Write each rehearsal as an agent case in the agent's list, marked "Rehearses: H3", and mark the human case "Rehearsed by: B7". A human case marked should check is not rehearsed; write "Not rehearsed" on it, and point to evidence from another agent case if one happens to collect it. On the human case, say in one line what the rehearsal cannot show, so that the person spends their time there.
+If the plan has a human case marked must pass, read `reference/rehearsals.md` in full before writing its rehearsal: it gives the method for each kind (screen reader, visual, real device, wording, real consequences) and how the two cases refer to each other. There is no rehearsal for signing in with a personal credential.
 
 
 **When a case cannot pass as the code stands.** If reading the code shows that a required case will fail (a placeholder with no accessible name, say), or its expected result depends on an open question, do not plan it as a case to run: running it would spend a person's time confirming what is already known. Put it at the top of the plan under "Known problems to settle first", with the evidence and what has to be fixed or decided, and keep the case in the plan marked as blocked by it.
@@ -292,21 +253,10 @@ A rehearsal case adds a line "Rehearses: H3", and its evidence includes the tran
 
 ### The agent part as one block to paste
 
-The agent cases will usually be handed to another agent session, so give them a second time at the end of the plan as a single fenced block that can be copied in one go and pasted as that session's whole instruction. Put a line above it saying what it is for. Use a fence longer than any fence inside it (four backticks or more), so that the block does not end early.
+The agent cases will usually be handed to another agent session, so give them a second time at the end of the plan as a single fenced block that can be copied in one go and pasted as that session's whole instruction. If the plan has an agent case, read `reference/handoff.md` in full before writing the block: it lists what the block must contain to stand on its own.
 
-The block must stand on its own, because the agent that receives it has not seen the plan, the diff, or this conversation. It contains, in this order:
+In the plan's own list of cases, keep the "Catches" and "Risk" lines: they let the tester judge a result that is close to the expected one but not identical, and let the user cut further when the budget is tight.
 
-1. One sentence on what is being tested and why.
-2. Where: the command to build and start the app locally against the staging backend, the directory to run it in, the local URL, the staging host its requests must go to, the account to use, and which tool to drive (the browser, the simulator). State that the production build command and production URLs must not be used, and that the agent must check the request host before signing in and stop if it is not the staging host. Say plainly that the cases are run against this local build and not against the deployed branch, and give any deployed URL only for the comparison cases that need it.
-3. What a human has already done or must do first, such as signing in.
-4. The rules for the run: carry out only these cases, in this order; edit no code in the working tree (a mock that needs a patch goes in a throwaway copy, as the setup says); which actions with real consequences are allowed, and only on this environment and account; stop and report when a failure makes the following cases meaningless.
-5. The shared setup, including the code for every mock (the interception or script and the exact payload change), written out in full and ready to run, with how to remove each mock again before the cases that need real data.
-6. The agent cases marked must pass, each with its setup, steps, expected result, and evidence to keep. Leave out the "Catches", "From", and "Risk" lines; they are for the person deciding what to run. For a rehearsal, say in one line what the human will do with the evidence.
-7. What to send back: for each case, passed, failed, or blocked, with what was seen and the evidence; then anything unexpected that was noticed on the way.
-
-Do not refer to anything outside the block ("see H2", "as described above"). List the should check cases after the block, not in it, so that they are not run by default.
-
-Keep the "Catches" and "Risk" lines: they let the tester judge a result that is close to the expected one but not identical, and let the user cut further when the budget is tight.
 
 End with the cost of carrying the plan out: a rough time for the human cases, and for the agent cases the number of cases and screens to visit, with a note that running them in a browser costs far more tokens than writing the plan did.
 
@@ -321,19 +271,15 @@ Make the offer only when it can be taken up. Leave it out, and say in one line w
 - there is no way for an agent to sign in: no skill or documented flow for signing in to staging as a test account, and the login needs a personal credential. Then say that the user has to sign in and hand the session over first, and offer to run the cases after that;
 - "Known problems to settle first" holds something that blocks the must pass cases, or the code is still changing. Then say what has to happen before a run is worth its cost.
 
-If the user says yes:
-
-1. Start the local staging build as the plan's setup says, and check the request host before signing in.
-2. Sign in with the sign-in skill or the documented test-account flow. Never ask for a password in the chat, and never print one.
-3. Run the cases under the rules for a run at the end of this skill.
+If the user says yes, read `reference/running.md` in full and follow it: it says how to start the build, check the backend, and sign in, and gives the rules for the run.
 
 If the user says no, or answers something else, the plan stands as written and the paste block is there for another session.
 
 ## Rules
 
-- Write the plan; do not carry it out, and do not edit code. Offer to run the agent cases (see "Offer to run the agent part"), and run them only once the user has said yes to that offer or asked for it. When running them: keep the evidence each case names, run the must pass cases only unless asked for more, in the order given, report each case as passed, failed, or blocked with what was seen, stop and report when a failure makes the cases after it meaningless, report a rehearsal as a rehearsal (what it found, and that the human case is still open), never mark a human case as done, and stop before any action with real consequences that the plan did not place in a safe environment; before the first such action in a run, confirm that the local build is talking to that environment's backend and that the browser is signed in as the test account the plan names. Never run a case, mocked or not, against a production backend or a production deployment.
+- Write the plan; do not carry it out, and do not edit code. Offer to run the agent cases (see "Offer to run the agent part"), and run them only once the user has said yes to that offer or asked for it, under the rules in `reference/running.md`. Never run a case, mocked or not, against a production backend or a production deployment.
+- The files in `reference/` are part of this skill. Read each one at the point where this file names it, in full, and do not work from its one-line summary here.
 - A rehearsal never replaces the human case it rehearses, and a clean rehearsal is not a reason to drop it. A passed agent walk through the accessibility tree is not a passed screen reader test.
-- When a rehearsal finds a problem, the human case waits until it is fixed; there is no point in a person confirming what the agent already found.
 - Do not write the plan from the diff alone when the pull request, the issue, or the conversation can be read. A case that a reviewer's report, an acceptance criterion, or an earlier finding calls for, and that needs the running app, is never cut for the budget; cut something else. Where a test in code can settle it, it goes on the list of tests to write, like anything else.
 - Staging only. Every build command, URL, and backend in the plan is the staging or test one. Do not put a production command or URL in the plan, even as an alternative.
 - Do not invent accounts, URLs, credentials, or data. Describe what is needed and let the tester supply it.
