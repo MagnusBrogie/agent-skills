@@ -1,0 +1,13 @@
+{
+  "name": "voiceover-skill-tool",
+  "version": "1.0.0",
+  "description": "Drives macOS VoiceOver against a web page with Guidepup and Playwright",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@guidepup/guidepup": "0.40.0",
+    "@guidepup/playwright": "0.21.0",
+    "@playwright/test": "1.65.0"
+  }
+}

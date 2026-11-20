@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>VoiceOver smoke page</title>
+        <style>
+            .sr-only {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                overflow: hidden;
+                clip: rect(0 0 0 0);
+                white-space: nowrap;
+            }
+        </style>
+    </head>
+    <body>
+        <main>
+            <h1>Smoke heading</h1>
+            <p>First paragraph.</p>
+            <p>Value: <span aria-hidden="true">–</span><span class="sr-only">missing</span></p>
+            <button type="button">Smoke button</button>
+            <a href="#end">Smoke link</a>
+        </main>
+    </body>
+</html>
