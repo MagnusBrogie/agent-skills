@@ -93,7 +93,10 @@ If `gh` is missing or not signed in, the branch has no pull request, no issue is
 
 - **How to run the app locally:** the project's documented command for a local build, which backend it talks to, and which ports it uses. Read the project's instructions for test environments, test accounts, and feature flags, and for which platforms the app ships on (web, iOS, Android).
 - **What the automated tests cover:** read the tests in the diff, so the plan does not spend anyone's time on what a test already pins down.
-- **Which tools an agent has here:** a browser it can drive, and a device simulator. In Orca these are the embedded browser (the `orca-cli` skill) and the iOS Simulator (the `orca-emulator` skill; `orca-emulator-android` for Android). Note which are available in this session; the plan says so in its setup.
+- **Which tools an agent has here:** a browser it can drive, and a device simulator. In Orca these are the embedded browser (the `orca-cli` skill) and the iOS Simulator (the `orca-emulator` skill; `orca-emulator-android` for Android). Also look for:
+  - **A scripted browser** (Playwright with an installed browser) for what the embedded browser cannot do. For example, the embedded browser may not put a copy on the system clipboard, so checking what is copied needs a browser whose clipboard the agent can read.
+
+  Note which are available in this session; the plan says so in its setup.
 
 
 ## Test a local build, not the deployed branch
@@ -175,6 +178,7 @@ Assign each case to one of three: **agent, browser**; **agent, iOS simulator**; 
 - the accessibility tree: each control has a name, a role, and a state, and headings and landmarks are present;
 - keyboard operation in the browser: the tab order, that focus is visible and lands where it should after an action, that every control can be operated without a pointer;
 - a side-by-side comparison of the same screen on the base and on the branch;
+- what is copied when text is selected, in a browser whose clipboard the agent can read;
 - on the simulator: the same facts in the installed app, plus rotation, text size settings, and light and dark appearance.
 
 **A human is needed when the case turns on perception, judgment, a real device, or something an agent must not or cannot do:**
