@@ -33,5 +33,9 @@ When a case depends on a rewritten response, the plan must make the rewrite repe
 - Name the request (method and path) and the exact fields to change, with their values.
 - Find out from the code how the app makes its requests, and say which way of intercepting works for it. A patch of one request API in the page does nothing for an app that uses another, and a rewrite must survive a reload if the case reloads.
 - Check that the agent's browser tool can intercept requests at all. If it cannot, the case is a human case, or needs a human to set up the rewrite first.
+- Find out when the app sends the request. A request sent only at startup needs the rewrite in place before a reload, and the case reloads after setting it up.
+- Know what the interception matches. A tool that answers every request to a path with one fixed body (the embedded browser's `network route … --body` in Orca, for example) gives the same answer to every request on that path: one per account, say. Say so when that matters, or use an interception that can look at each request (Playwright's `page.route`).
+- Check that the rewrite does not make the app fetch again and again (an answer that leaves the data looking incomplete can do that): count the requests to that path before and after the case.
+- Say how to remove the rewrite, and check after removing it that the screen shows real data again.
 - Give the human way of doing the same rewrite (for example the browser's developer tools), for the human cases that need the same state.
 - Record under "Not covered" that the case shows how the app handles the rewritten response, not that the backend sends that shape.
