@@ -5,7 +5,7 @@ Read this when the user has said yes to the offer, or has asked for the agent ca
 ## Before the first case
 
 1. Start the local staging build as the plan's setup says, and check the request host before signing in.
-2. Sign in with the sign-in skill or the documented test-account flow. Never ask for a password in the chat, and never print one.
+2. Sign in with the sign-in skill or the documented test-account flow. Never ask for a password in the chat, and never print one. A test account may allow one session at a time: signing in from a second browser (a script, a screen reader run) can sign the first one out. Sign in again in the browser a case needs before running it, and say in the report which sessions were replaced.
 3. Run the cases under the rules below.
 
 ## Rules for the run
@@ -19,3 +19,4 @@ Read this when the user has said yes to the offer, or has asked for the agent ca
 - Never run a case, mocked or not, against a production backend or a production deployment.
 - Edit no code in the working tree. A mock that needs a patch goes in a throwaway copy, as the plan's setup says.
 - When a rehearsal finds a problem, say that the human case waits until it is fixed.
+- Clean up when the run is over: stop the servers you started, remove any throwaway copies and mocks, and delete any saved session files.
