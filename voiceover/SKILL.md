@@ -35,7 +35,8 @@ tart run voiceover-run &              # opens the guest's window; --no-graphics 
 ssh admin@"$(tart ip voiceover-run)"
 ```
 
-- **The tool folder.** Copy it into the guest without `node_modules`, `test-results`, and `specs/scratch` (for example with `rsync -a --exclude`), and run "Setup" there. In every command below, `<tool>` is that copy, and the command runs in the guest. Do not share the host's home folder or a whole repository with the guest; if a folder is shared, share only the tool folder.
+- **Commands in the guest.** Both `tart exec` and SSH work for everything below, VoiceOver runs included. `tart exec <name> zsh -lc '<command>'` needs no credentials. Over SSH, run commands through a login shell too (`ssh … "zsh -lc '<command>'"`): a bare SSH command does not have Homebrew's Node.js on its path. For SSH without a password prompt, add a public key made for this purpose to the guest's `~/.ssh/authorized_keys`, in `voiceover-base` so that clones have it.
+- **The tool folder.** Copy it into the guest without `node_modules`, `test-results`, and `specs/scratch`, and run "Setup" there. `rsync -a --exclude` over SSH does it, and so does `tar --exclude … -cf - . | tart exec -i <name> zsh -lc 'mkdir -p ~/voiceover-tool && tar -xf - -C ~/voiceover-tool'` from the tool folder. In every command below, `<tool>` is that copy, and the command runs in the guest. Do not share the host's home folder or a whole repository with the guest; if a folder is shared, share only the tool folder.
 - **The page.** A `localhost` URL on the host is not `localhost` in the guest. Forward the port when connecting, `ssh -R 3000:localhost:3000 admin@<guest address>`, and the same `http://localhost:3000/…` URL works in the guest, with the origin a saved session expects. This also avoids making the dev server listen on other interfaces.
 - **A signed-in session.** Copy the storage state file in with `scp`, for a test account only, never a real user's session.
 - **The macOS version** in the guest decides VoiceOver's wording, and it may differ from the host's. Give the guest's version (`sw_vers -productVersion`) when reporting.
@@ -43,7 +44,7 @@ ssh admin@"$(tart ip voiceover-run)"
 
 ## Setup, once per guest
 
-This needs macOS and Node.js (install Node.js in the guest if the image lacks it). If `<tool>/node_modules` is missing, install the packages and the browser:
+This needs macOS and Node.js. Tart's macOS base images have Node.js from Homebrew; install it in the guest if the image lacks it. If `<tool>/node_modules` is missing, install the packages and the browser:
 
 ```sh
 cd <tool>
@@ -53,8 +54,15 @@ npx playwright install webkit
 
 Then VoiceOver has to be allowed to be controlled with AppleScript, and the process that runs the commands needs the macOS permissions listed under "If a run fails".
 
-- **In a disposable guest**, `npx @guidepup/setup` in `<tool>` does both. It writes the permissions for the shells, `sshd`, and `osascript` into the guest's privacy database, which is what a throwaway machine is for. It needs System Integrity Protection off in the guest, as it is in images built for CI. If it cannot write them, grant them by hand in the guest's window. Do this in `voiceover-base`, with the packages installed, so that every clone starts ready.
-- **On the host**, never run that command (see the end of this file). The user ticks "Allow VoiceOver to be controlled with AppleScript" in VoiceOver Utility, General, and grants each permission when a run asks for it. Only the user can do these; do not try to grant them yourself.
+- **In a disposable guest**, two commands in `<tool>` do both:
+
+  ```sh
+  sudo env PATH="$PATH" HOME="$HOME" npx @guidepup/setup setup --ci   # the AppleScript switch and the permissions
+  npx @guidepup/setup install voiceover                              # the VoiceOver preferences a run mounts
+  ```
+
+  The first writes the permissions for the shells, `sshd`, and `osascript` into the guest's privacy database, which is what a throwaway machine is for. It needs root (without `sudo` it fails with "Unable to write to the VoiceOver database file") and System Integrity Protection off in the guest (`csrutil status`), as it is in Tart's base images. Without the second, a run fails with "Failed to mount Guidepup preferences". If the first cannot write the permissions, grant them by hand in the guest's window. Do this in `voiceover-base`, with the packages installed, so that every clone starts ready.
+- **On the host**, never run the first of those commands (see the end of this file). The user ticks "Allow VoiceOver to be controlled with AppleScript" in VoiceOver Utility, General, and grants each permission when a run asks for it. Only the user can do these; do not try to grant them yourself.
 
 ## Before running
 
@@ -141,7 +149,7 @@ Always call `voiceOver.navigateToWebContent()` after the page has loaded and bef
 
 ## If a run fails
 
-Each of the first three is a macOS permission. In a guest it belongs to the process that runs the commands (`sshd` over SSH, or the guest's Terminal); run `npx @guidepup/setup` there again, or grant it in the guest's window. On the host it belongs to the app the agent runs in (a terminal, an editor, an agent app), and only the user can grant it: stop, say which one is missing, and wait. Do not work around a permission on the host. They tend to appear in this order on a machine that has never run Guidepup, one per attempt:
+Each of the first three is a macOS permission. In a guest it belongs to the process that runs the commands (`sshd` over SSH, Tart's guest agent under `tart exec`, or the guest's Terminal); run the setup command from "Setup" there again, or grant it in the guest's window. On the host it belongs to the app the agent runs in (a terminal, an editor, an agent app), and only the user can grant it: stop, say which one is missing, and wait. Do not work around a permission on the host. They tend to appear in this order on a machine that has never run Guidepup, one per attempt:
 
 1. **"Failed to mount Guidepup preferences … EPERM … symlink"**: on every start Guidepup puts four symlinks in `~/Library/Group Containers/group.com.apple.VoiceOver/Library/Preferences`, which macOS protects as another app's data. The app has to be allowed to reach it: a system dialog about "data from other apps", or Full Disk Access for the app. The command must also not be sandboxed away from it; `ls` on that folder failing with "Operation not permitted" shows the block.
 2. **"Unable to activate application by ID: org.webkit.Playwright"** or **"System Events got an error: AppleEvent timed out (-1712)"**: the app is not allowed to control System Events or VoiceOver, or the dialog asking for it is waiting unanswered, perhaps behind other windows. The user allows it in the dialog, or under Privacy & Security, Automation: the app, with System Events and VoiceOver on.
@@ -149,6 +157,7 @@ Each of the first three is a macOS permission. In a guest it belongs to the proc
 
 - **VoiceOver is left running** after a crash: turn it off with Cmd+F5, or `pkill -f 'VoiceOver.app/Contents/MacOS/VoiceOver'`.
 - **"AppleScript control" errors**: the checkbox "Allow VoiceOver to be controlled with AppleScript" in VoiceOver Utility, General, is off. The user has to tick it; `ls /private/var/db/Accessibility/.VoiceOverAppleScriptEnabled` shows whether it is on.
+- **The guest does not start: "The virtual machine encountered a security error … Failed to create new HostKey"**: the host could not make the guest's key. It needs the user's unlocked login keychain and a signed-in desktop session on the host, so it is the user's to fix; Tart's FAQ has a section on it. Linux guests start regardless, which tells this apart from virtualization being blocked.
 - **Stuck at "item chooser" or "web content"**: `navigateToWebContent` matches English phrases, so the system language must be English.
 - **After updating `@guidepup/guidepup`**: run `npx @guidepup/setup install voiceover` in the tool directory.
 
