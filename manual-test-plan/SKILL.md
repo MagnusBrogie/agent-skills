@@ -129,6 +129,8 @@ The same rule holds for any deployed environment the plan uses: the staging depl
 4. **Work out how to reach each state.** Name the navigation path, and describe the data it needs by its shape ("an instrument held in two accounts, one of them with no purchase cost"), not by an account you have not confirmed exists. Where a state is hard to reach with real data, say how it can be produced (a feature flag, a rewritten response, a throttled network, a setting) or mark it as needing a specific test account.
 
    When a case depends on a rewritten response, the plan must make the rewrite repeatable; `reference/mocks.md` says how.
+
+   Give each case a way in that does not depend on luck with the account's data. If real data may lack the state, name the control in the app that switches it on (a setting, a toggle, another account) or the mock that produces it, as the case's setup or as its fallback. A case whose setup is "an account that happens to have this" will be reported as not exercised.
 5. **Derive the expected result from the code.** Read what the code will render or do in that state and write that down exactly: the text as the app shows it, in the app's language; the value, with its formatting; what is absent. An expected result of "displays correctly" tells the tester nothing. If the code does not settle what should happen, do not guess: put it under the open questions.
 6. **Add the checks around the change:**
    - **Neighbors:** where changed shared code is used by other screens, a case for the one or two where it is most likely to behave differently (different data, a different path through the changed code). Screens that use it in the same way as one already covered do not need their own case.
@@ -289,6 +291,7 @@ If the user says no, or answers something else, the plan stands as written and t
 - Do not write the plan from the diff alone when the pull request, the issue, or the conversation can be read. A case that a reviewer's report, an acceptance criterion, or an earlier finding calls for, and that needs the running app, is never cut for the budget; cut something else. Where a test in code can settle it, it goes on the list of tests to write, like anything else.
 - Staging only. Every build command, URL, and backend in the plan is the staging or test one. Do not put a production command or URL in the plan, even as an alternative.
 - Do not invent accounts, URLs, credentials, or data. Describe what is needed and let the tester supply it.
+- A missing state is a problem to solve, in the plan and in the run. Reach it through the app's own controls, another screen or the component catalogue, a mock, or another tool before calling a case blocked or not exercised; `reference/running.md` has the order to try them in.
 - Do not pad. A small change gets a handful of cases, and a change that code tests cover well may need none in the browser; say so when that is the conclusion.
 - Never plan a case in the app for something a test in code could cover as well. Put it on the list of tests to write.
 - If reading the code for this plan turns up something that looks like a bug, note it in one line at the end; the plan is not a review.
