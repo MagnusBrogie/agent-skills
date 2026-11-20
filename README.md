@@ -10,6 +10,39 @@ Skills for coding agents such as Claude Code, for working on a feature branch: r
 | [`before-after`](before-after/SKILL.md) | Makes one image with a table of before and after screenshots for every visual change on the branch, taken from local builds of the base and the branch. |
 | [`worktree-status`](worktree-status/SKILL.md) | Reports where the worktree and its pull request stand (uncommitted work, checks, reviews, open comments) and suggests the next steps. Read-only apart from a `git fetch`. |
 
+## Example
+
+Asking "where does this branch stand?" runs `worktree-status`. A report looks like this (an illustration, not output from a real repository):
+
+> **Draft PR #123: approved, but two commits pushed since then are unreviewed, and one check fails.**
+>
+> | Area | Status |
+> | --- | --- |
+> | Working tree | 2 files uncommitted |
+> | Branch vs remote | in sync |
+> | Branch vs base | 7 behind, no file changed on both sides |
+> | PR | #123, draft |
+> | Checks | 10 pass, 1 failing: `lint`, an unused import in `src/table/sort.ts` |
+> | Reviews | approved by alice, before the last 2 commits |
+> | Review threads | 1 to do, 1 needs a reply |
+>
+> **Open review comments**
+> - `src/table/sort.ts:41`, alice: empty values should sort last in both directions. To do.
+> - `src/table/view.ts:88`, alice: asked for a test of the loading state. Done in the last commit, needs a reply.
+>
+> **From this conversation**
+> - `branch-review regression` ran before the last two commits, so its result is stale for `sort.ts`.
+> - Checking the table with a screen reader was put off.
+>
+> **Next steps**
+> 1. Fix the sort order for empty values, and commit with the two uncommitted files.
+> 2. Remove the unused import, so that `lint` passes.
+> 3. Run `branch-review regression` again, since `sort.ts` changed after the last pass.
+> 4. Push, reply on the two threads, and ask alice for a second look.
+> 5. Run `manual-test-plan` for the screen reader case, then mark the PR ready for review.
+
+The other skills report in the same spirit: a verdict first, findings in a table with `file:line`, and a list of what could not be verified.
+
 ## Install
 
 Clone the repo and link the skills into your agent's skills folder. For Claude Code:
